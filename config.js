@@ -6,7 +6,7 @@ window.HOSPITAL_SITE = {
   // ── connection ──
   slug: 'qmh',                                                     // the hospital code used on the login page
   apiBase: 'https://qmh-backend-production.up.railway.app',        // the hospital system's address (the backend)
-  appUrl: '',                                                      // where staff / patients log in, e.g. 'https://app.yourhospital.com'
+  appUrl: 'https://hospitalapp.qmsofts.com',                                                      // where staff / patients log in, e.g. 'https://app.yourhospital.com'
                                                                    // (empty = the Login buttons say login is not switched on yet)
 
   // ── fallbacks, used when Settings has no value ──
