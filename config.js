@@ -4,7 +4,7 @@
 // back to the values below. Everything here is public — never put a password or key in this file.
 window.HOSPITAL_SITE = {
   // ── connection ──
-  slug: 'qmh',                                                     // the hospital code used on the login page
+  slug: 'city-general-hospital',                                                     // the hospital code used on the login page
   apiBase: 'https://hospitalappbackend.qmsofts.com',        // the hospital system's address (the backend)
   appUrl: 'https://hospitalapp.qmsofts.com',                                                      // where staff / patients log in, e.g. 'https://app.yourhospital.com'
                                                                    // (empty = the Login buttons say login is not switched on yet)
