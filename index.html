@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Hospital</title>
+  <meta name="description" content="Book a doctor's appointment online. Experienced doctors, clear billing and caring staff.">
+  <meta name="theme-color" content="#0f1a3a">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-title="">
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="wrap hero__grid">
+        <div>
+          <h1 id="hero-title"></h1>
+          <p class="lead" id="hero-text"></p>
+          <div class="hero__cta">
+            <a class="btn btn--gold" href="book.html">Book appointment</a>
+            <a class="btn btn--ghost" id="hero-call" href="#contact">Contact us</a>
+          </div>
+          <ul class="hero__points" id="hero-points"></ul>
+        </div>
+        <div id="hero-side"></div>
+      </div>
+    </section>
+
+    <section class="strip"><div class="wrap strip__grid" id="strip"></div></section>
+
+    <section class="block" id="departments">
+      <div class="wrap">
+        <div class="head"><h2>Our departments</h2><p>Care for the whole family under one roof.</p></div>
+        <div class="grid" id="dept-grid"></div>
+      </div>
+    </section>
+
+    <section class="block block--soft" id="doctors">
+      <div class="wrap">
+        <div class="head"><h2>Meet our doctors</h2><p>Choose a doctor and book a time that suits you.</p></div>
+        <div class="grid" id="doc-grid"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+      </div>
+    </section>
+
+    <section class="block" id="about">
+      <div class="wrap">
+        <div class="head"><h2 id="why-title">Why choose us</h2><p>What patients tell us they value.</p></div>
+        <div class="grid" id="why-grid"></div>
+        <div class="stats" id="stats" style="margin-top:42px"></div>
+      </div>
+    </section>
+
+    <section class="block block--soft" id="voices" hidden>
+      <div class="wrap"><div class="head"><h2>What patients say</h2></div><div class="grid" id="voice-grid"></div></div>
+    </section>
+
+    <section class="block" id="faq">
+      <div class="wrap"><div class="head"><h2>Common questions</h2></div><div class="faq" id="faq-list"></div></div>
+    </section>
+
+    <section class="block block--soft" id="contact">
+      <div class="wrap">
+        <div class="head"><h2>Visit or contact us</h2></div>
+        <div class="contact">
+          <div class="card" id="contact-card"></div>
+          <div class="cta-band">
+            <h2>Ready to see a doctor?</h2>
+            <p>Book online in about a minute. You pay at the hospital.</p>
+            <a class="btn btn--gold" href="book.html">Book appointment</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="config.js"></script>
+  <script src="assets/site.js"></script>
+  <script src="assets/home.js"></script>
+</body>
+</html>
