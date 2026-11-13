@@ -75,13 +75,23 @@
   function pickTime(t) { st.time = t; notice(''); render(); }
 
   // ── the form values live outside render() so typing is never lost ──
-  var F = { name: '', mobile: '', age: '', gender: '', email: '', reason: '', consent: false, hp: '' };
+  var F = { name: '', mobile: '', age: '', gender: '', email: '', reason: '', consent: false, hp: '', forChild: null, dob: '', guardian: '', relation: '' };
+  // a children's hospital starts on "for a child"; anyone else can tick it
+  function isChild() { return F.forChild === null ? !!(st.cfg && st.cfg.profile === 'paediatric') : F.forChild; }
+  function isoToday() { return todayStr(); }
+  function eighteenAgo() { var t = todayStr(); return (Number(t.slice(0, 4)) - ((st.cfg && st.cfg.childMaxYears) || 18)) + t.slice(4); }
   function validate() {
     var e = {};
-    if (!F.name.trim()) e.name = 'Please enter the patient\'s name.';
+    if (!F.name.trim()) e.name = isChild() ? 'Please enter the child\'s name.' : 'Please enter the patient\'s name.';
+    if (isChild()) {
+      if (!F.dob) e.dob = 'Please enter the child\'s date of birth.';
+      else if (F.dob > isoToday()) e.dob = 'The date of birth cannot be in the future.';
+      else if (F.dob <= eighteenAgo()) e.dob = 'Online booking for a child is for children under 18. Please book as an adult.';
+      if (!F.guardian.trim()) e.guardian = 'Please enter the parent or guardian\'s name.';
+    }
     var m = F.mobile.replace(/[\s-]/g, ''); if (m.indexOf('+91') === 0) m = m.slice(3); if (m.charAt(0) === '0') m = m.slice(1);
     if (!/^\d{10}$/.test(m)) e.mobile = 'Please enter a 10-digit mobile number.';
-    if (F.age !== '' && !(Number(F.age) >= 0 && Number(F.age) <= 120)) e.age = 'Age must be between 0 and 120.';
+    if (!isChild() && F.age !== '' && !(Number(F.age) >= 0 && Number(F.age) <= 120)) e.age = 'Age must be between 0 and 120.';
     if (F.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(F.email)) e.email = 'Please enter a valid email address.';
     if (st.cfg.consent && !F.consent) e.consent = 'Please tick the box to agree.';
     return { errors: e, mobile: m };
@@ -100,8 +110,9 @@
     if (keys.length) { showErrors(v.errors); notice(v.errors[keys[0]]); return; }
     if (F.hp) return;                                                                  // a robot filled the hidden field
     st.busy = true; render();
-    var body = { patientName: F.name.trim(), mobile: v.mobile, age: F.age === '' ? '' : String(Math.floor(Number(F.age))), gender: F.gender, date: st.date, time: st.time,
+    var body = { patientName: F.name.trim(), mobile: v.mobile, age: isChild() || F.age === '' ? '' : String(Math.floor(Number(F.age))), gender: F.gender, date: st.date, time: st.time,
       doctor: st.doctor ? st.doctor.name : '', dept: st.doctor ? (st.doctor.dept || '') : '', reason: F.reason.trim(), email: F.email.trim(), consent: !!F.consent };
+    if (isChild()) { body.forChild = true; body.childDob = F.dob; body.guardianName = F.guardian.trim(); body.guardianRelation = F.relation; }
     T.api('/appointments', { method: 'POST', body: body }).then(function (r) {
       st.busy = false;
       if (r.ok) return done(r.data, body);
@@ -123,7 +134,7 @@
   function done(res, body) {
     var i = T.info(), req = !!res.request, ref = res.ref || String(res.id || '').slice(-6).toUpperCase();
     var app = T.clear($('#app'));
-    var rows = [['Name', body.patientName], ['Doctor', body.doctor ? drName(body.doctor) : 'Any available doctor'], ['Date', niceDate(body.date)], ['Time', body.time ? nice12(body.time) : 'To be confirmed'], ['Reference', ref]];
+    var rows = [[body.forChild ? 'Child' : 'Name', body.patientName]].concat(body.forChild ? [['Parent / guardian', body.guardianName]] : []).concat([['Doctor', body.doctor ? drName(body.doctor) : 'Any available doctor'], ['Date', niceDate(body.date)], ['Time', body.time ? nice12(body.time) : 'To be confirmed'], ['Reference', ref]]);
     if (!req && Number(res.fee) > 0) rows.push(['Consultation fee', '₹' + Number(res.fee).toLocaleString('en-IN') + ' (pay at the hospital)']);
     var dl = el('dl'); rows.forEach(function (r) { dl.appendChild(el('dt', { text: r[0] })); dl.appendChild(el('dd', { text: r[1] })); });
     var btns = el('div', { class: 'done__btns' });
@@ -197,13 +208,25 @@
   function renderDetailsStep() {
     var off = !st.date || (st.mode === 'direct' && !st.time);
     function bind(inp, key) { inp.value = F[key]; inp.addEventListener('input', function () { F[key] = inp.value; var e = $('[data-err="' + key + '"]'); if (e) e.textContent = ''; }); return inp; }
+    var child = isChild();
+    var tick = el('input', { id: 'f-forchild', type: 'checkbox' }); tick.checked = child;
+    tick.addEventListener('change', function () { F.forChild = tick.checked; render(); });
     var kids = [
-      field('f-name', 'Patient name *', bind(el('input', { id: 'f-name', type: 'text', autocomplete: 'name', maxlength: '150', required: true }), 'name')),
-      field('f-mobile', 'Mobile number *', bind(el('input', { id: 'f-mobile', type: 'tel', inputmode: 'tel', autocomplete: 'tel', placeholder: '10-digit mobile', maxlength: '16', required: true }), 'mobile'), 'We send your confirmation to this number.'),
-      el('div', { class: 'two' }, [
-        field('f-age', 'Age', bind(el('input', { id: 'f-age', type: 'number', inputmode: 'numeric', min: '0', max: '120' }), 'age')),
-        field('f-gender', 'Gender', (function () { var s = el('select', { id: 'f-gender' }, [['', 'Prefer not to say'], ['Female', 'Female'], ['Male', 'Male'], ['Other', 'Other']].map(function (o) { return el('option', { value: o[0], text: o[1] }); })); return bind(s, 'gender'); })())]),
+      el('label', { class: 'check', for: 'f-forchild' }, [tick, el('span', { text: 'This appointment is for a child (under 18)' })]),
+      field('f-name', child ? 'Child\'s name *' : 'Patient name *', bind(el('input', { id: 'f-name', type: 'text', autocomplete: child ? 'off' : 'name', maxlength: '150', required: true }), 'name')),
     ];
+    if (child) {
+      kids.push(el('div', { class: 'two' }, [
+        field('f-dob', 'Date of birth *', bind(el('input', { id: 'f-dob', type: 'date', min: eighteenAgo(), max: isoToday() }), 'dob')),
+        field('f-gender', 'Gender', (function () { var s2 = el('select', { id: 'f-gender' }, [['', 'Prefer not to say'], ['Female', 'Girl'], ['Male', 'Boy'], ['Other', 'Other']].map(function (o) { return el('option', { value: o[0], text: o[1] }); })); return bind(s2, 'gender'); })())]));
+      kids.push(el('div', { class: 'two' }, [
+        field('f-guardian', 'Parent or guardian name *', bind(el('input', { id: 'f-guardian', type: 'text', autocomplete: 'name', maxlength: '100', required: true }), 'guardian')),
+        field('f-relation', 'Relationship', (function () { var s3 = el('select', { id: 'f-relation' }, [['', 'Choose'], ['Mother', 'Mother'], ['Father', 'Father'], ['Grandparent', 'Grandparent'], ['Other', 'Other']].map(function (o) { return el('option', { value: o[0], text: o[1] }); })); return bind(s3, 'relation'); })())]));
+    }
+    kids.push(field('f-mobile', child ? 'Parent\'s mobile number *' : 'Mobile number *', bind(el('input', { id: 'f-mobile', type: 'tel', inputmode: 'tel', autocomplete: 'tel', placeholder: '10-digit mobile', maxlength: '16', required: true }), 'mobile'), 'We send your confirmation to this number.'));
+    if (!child) kids.push(el('div', { class: 'two' }, [
+      field('f-age', 'Age', bind(el('input', { id: 'f-age', type: 'number', inputmode: 'numeric', min: '0', max: '120' }), 'age')),
+      field('f-gender', 'Gender', (function () { var s = el('select', { id: 'f-gender' }, [['', 'Prefer not to say'], ['Female', 'Female'], ['Male', 'Male'], ['Other', 'Other']].map(function (o) { return el('option', { value: o[0], text: o[1] }); })); return bind(s, 'gender'); })())]));
     if (st.mode === 'request') kids.push(field('f-email', 'Email (optional)', bind(el('input', { id: 'f-email', type: 'email', autocomplete: 'email' }), 'email')));
     kids.push(field('f-reason', 'Reason for the visit (optional)', bind(el('textarea', { id: 'f-reason', maxlength: '300', placeholder: 'For example: fever for 3 days' }), 'reason')));
     kids.push(el('div', { class: 'hp', 'aria-hidden': 'true' }, [el('label', { for: 'f-hp', text: 'Leave this empty' }), bind(el('input', { id: 'f-hp', type: 'text', tabindex: '-1', autocomplete: 'off' }), 'hp')]));
